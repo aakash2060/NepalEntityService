@@ -7,7 +7,7 @@ from datetime import date, datetime
 import pytest
 
 from nes.core.models.relationship import Relationship
-from nes.core.models.version import Actor, Version
+from nes.core.models.version import Actor, VersionSummary
 from nes.database.file_database import FileDatabase
 
 
@@ -27,9 +27,9 @@ def sample_actor():
 
 
 @pytest.fixture
-def sample_version(sample_actor):
-    """Create a sample version for testing."""
-    return Version(
+def sample_version_summary(sample_actor):
+    """Create a sample version summary for testing."""
+    return VersionSummary(
         entityOrRelationshipId="relationship:person/harka-sampang:organization/shram-sanskriti-party:MEMBER_OF",
         type="RELATIONSHIP",
         versionNumber=1,
@@ -40,14 +40,14 @@ def sample_version(sample_actor):
 
 
 @pytest.fixture
-def sample_relationship(sample_version):
+def sample_relationship(sample_version_summary):
     """Create a sample relationship for testing."""
     return Relationship(
         sourceEntityId="entity:person/harka-sampang",
         targetEntityId="entity:organization/shram-sanskriti-party",
         type="MEMBER_OF",
         startDate=date(2020, 1, 1),
-        versionInfo=sample_version,
+        versionSummary=sample_version_summary,
         createdAt=datetime.now(),
     )
 
@@ -98,21 +98,37 @@ async def test_delete_nonexistent_relationship(temp_db):
 
 
 @pytest.mark.asyncio
-async def test_list_relationships(temp_db, sample_version):
+async def test_list_relationships(temp_db, sample_actor):
     """Test listing relationships."""
+    version_summary1 = VersionSummary(
+        entityOrRelationshipId="relationship:person/harka-sampang:organization/shram-sanskriti-party:MEMBER_OF",
+        type="RELATIONSHIP",
+        versionNumber=1,
+        actor=sample_actor,
+        changeDescription="Relationship 1",
+        createdAt=datetime.now(),
+    )
+    version_summary2 = VersionSummary(
+        entityOrRelationshipId="relationship:person/rabindra-mishra:organization/rastriya-swatantra-party:AFFILIATED_WITH",
+        type="RELATIONSHIP",
+        versionNumber=1,
+        actor=sample_actor,
+        changeDescription="Relationship 2",
+        createdAt=datetime.now(),
+    )
     relationships = [
         Relationship(
             sourceEntityId="entity:person/harka-sampang",
             targetEntityId="entity:organization/shram-sanskriti-party",
             type="MEMBER_OF",
-            versionInfo=sample_version,
+            versionSummary=version_summary1,
             createdAt=datetime.now(),
         ),
         Relationship(
             sourceEntityId="entity:person/rabindra-mishra",
             targetEntityId="entity:organization/rastriya-swatantra-party",
             type="AFFILIATED_WITH",
-            versionInfo=sample_version,
+            versionSummary=version_summary2,
             createdAt=datetime.now(),
         ),
     ]
@@ -126,15 +142,23 @@ async def test_list_relationships(temp_db, sample_version):
 
 
 @pytest.mark.asyncio
-async def test_list_relationships_with_pagination(temp_db, sample_version):
+async def test_list_relationships_with_pagination(temp_db, sample_actor):
     """Test listing relationships with pagination."""
     relationships = []
     for i in range(5):
+        version_summary = VersionSummary(
+            entityOrRelationshipId=f"relationship:person/person-{i}:organization/org-{i}:MEMBER_OF",
+            type="RELATIONSHIP",
+            versionNumber=1,
+            actor=sample_actor,
+            changeDescription=f"Relationship {i}",
+            createdAt=datetime.now(),
+        )
         relationship = Relationship(
             sourceEntityId=f"entity:person/person-{i}",
             targetEntityId=f"entity:organization/org-{i}",
             type="MEMBER_OF",
-            versionInfo=sample_version,
+            versionSummary=version_summary,
             createdAt=datetime.now(),
         )
         relationships.append(relationship)

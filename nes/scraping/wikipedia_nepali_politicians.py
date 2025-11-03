@@ -1,9 +1,11 @@
 """Wikipedia Nepali politicians scraper."""
 
 import warnings
+
 warnings.filterwarnings("ignore", category=UserWarning, module="vertexai")
 
 from datetime import datetime
+
 import wikipedia
 from bs4 import BeautifulSoup
 
@@ -20,12 +22,12 @@ def get_entity_schema() -> dict:
     """Get the schema for the Person entity."""
     schema = Person.model_json_schema()
 
-    del schema['$defs']['Actor']
-    del schema['$defs']['Version']
-    del schema['properties']['type']
-    del schema['properties']['subType']
-    del schema['properties']['versionInfo']
-    del schema['properties']['createdAt']
+    del schema["$defs"]["Actor"]
+    del schema["$defs"]["Version"]
+    del schema["properties"]["type"]
+    del schema["properties"]["subType"]
+    del schema["properties"]["versionSummary"]
+    del schema["properties"]["createdAt"]
 
     return schema
 
@@ -103,7 +105,7 @@ The person bio: {content}
         changes=result,
     )
 
-    result["versionInfo"] = version
+    result["versionSummary"] = version
     result["type"] = entity_type
     result["subtype"] = entity_subtype
     result["createdAt"] = created_at
@@ -125,9 +127,9 @@ async def traverse_politician_page(name, href):
 
     contents = []
     urls = []
-    
+
     # Extract content from both English and Nepali
-    for lang in ['en', 'ne']:
+    for lang in ["en", "ne"]:
         try:
             wikipedia.set_lang(lang)
             page = wikipedia.page(page_title)
@@ -146,10 +148,10 @@ async def traverse_politician_page(name, href):
         except wikipedia.exceptions.PageError:
             # Page not found
             continue
-    
+
     if not contents:
         return None
-        
+
     combined_content = "\n\n".join(contents)
     entity = unstructured_to_entity(
         combined_content, {"Politician name": name, "Wikipedia links": urls}
@@ -192,6 +194,7 @@ def get_nepali_politician_page_links():
 
 if __name__ == "__main__":
     import asyncio
+
     from nes.database.file_database import FileDatabase
 
     async def main():

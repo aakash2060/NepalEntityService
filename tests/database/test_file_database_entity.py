@@ -8,7 +8,7 @@ import pytest
 
 from nes.core.models.base import Name
 from nes.core.models.entity import Entity, Organization, Person
-from nes.core.models.version import Actor, Version
+from nes.core.models.version import Actor, VersionSummary
 from nes.database.file_database import FileDatabase
 
 
@@ -28,9 +28,9 @@ def sample_actor():
 
 
 @pytest.fixture
-def sample_version(sample_actor):
-    """Create a sample version for testing."""
-    return Version(
+def sample_version_summary(sample_actor):
+    """Create a sample version summary for testing."""
+    return VersionSummary(
         entityOrRelationshipId="entity:person/harka-sampang",
         type="ENTITY",
         versionNumber=1,
@@ -41,24 +41,24 @@ def sample_version(sample_actor):
 
 
 @pytest.fixture
-def sample_person(sample_version):
+def sample_person(sample_version_summary):
     """Create a sample person entity for testing."""
     return Person(
         slug="harka-sampang",
         names=[Name(kind="DEFAULT", value="Harka Sampang", lang="ne")],
-        versionInfo=sample_version,
+        versionSummary=sample_version_summary,
         createdAt=datetime.now(),
     )
 
 
 @pytest.fixture
-def sample_organization(sample_version):
+def sample_organization(sample_version_summary):
     """Create a sample organization entity for testing."""
     return Organization(
         slug="shram-sanskriti-party",
         type="organization",
         names=[Name(kind="DEFAULT", value="Shram Sanskriti Party", lang="ne")],
-        versionInfo=sample_version,
+        versionSummary=sample_version_summary,
         createdAt=datetime.now(),
     )
 
@@ -119,14 +119,22 @@ async def test_list_entities(temp_db, sample_person, sample_organization):
 
 
 @pytest.mark.asyncio
-async def test_list_entities_with_pagination(temp_db, sample_version):
+async def test_list_entities_with_pagination(temp_db, sample_actor):
     """Test listing entities with pagination."""
     entities = []
     for i in range(5):
+        version_summary = VersionSummary(
+            entityOrRelationshipId=f"entity:person/person-{i}",
+            type="ENTITY",
+            versionNumber=1,
+            actor=sample_actor,
+            changeDescription=f"Person {i} creation",
+            createdAt=datetime.now(),
+        )
         entity = Person(
             slug=f"person-{i}",
             names=[Name(kind="DEFAULT", value=f"Person {i}", lang="ne")],
-            versionInfo=sample_version,
+            versionSummary=version_summary,
             createdAt=datetime.now(),
         )
         entities.append(entity)

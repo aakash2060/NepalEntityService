@@ -7,11 +7,12 @@ from pydantic import BaseModel, Field, computed_field, field_validator
 
 from nes.core.identifiers import build_entity_id
 
-from .base import ContactInfo, Name
 from ..constraints import (ENTITY_SUBTYPE_PATTERN, ENTITY_TYPE_PATTERN,
-                           MAX_DESCRIPTION_LENGTH, MAX_SHORT_DESCRIPTION_LENGTH,
-                           MAX_SLUG_LENGTH, MAX_SUBTYPE_LENGTH, MAX_TYPE_LENGTH,
+                           MAX_DESCRIPTION_LENGTH,
+                           MAX_SHORT_DESCRIPTION_LENGTH, MAX_SLUG_LENGTH,
+                           MAX_SUBTYPE_LENGTH, MAX_TYPE_LENGTH,
                            MIN_SLUG_LENGTH, SLUG_PATTERN)
+from .base import ContactInfo, Name
 from .person import Education, Position
 from .version import VersionSummary
 
@@ -47,8 +48,8 @@ class Entity(BaseModel):
     misspelledNames: Optional[List[Name]] = Field(
         None, description="List of misspelled or alternative name variations"
     )
-    versionSummary: Optional[VersionSummary] = Field(
-        None, description="Summary of the latest version information"
+    versionSummary: VersionSummary = Field(
+        ..., description="Summary of the latest version information"
     )
     createdAt: datetime = Field(
         ..., description="Timestamp when the entity was created"
@@ -66,10 +67,14 @@ class Entity(BaseModel):
         None, description="Contact information for the entity"
     )
     short_description: Optional[str] = Field(
-        None, max_length=MAX_SHORT_DESCRIPTION_LENGTH, description="Brief description of the entity"
+        None,
+        max_length=MAX_SHORT_DESCRIPTION_LENGTH,
+        description="Brief description of the entity",
     )
     description: Optional[str] = Field(
-        None, max_length=MAX_DESCRIPTION_LENGTH, description="Detailed description of the entity"
+        None,
+        max_length=MAX_DESCRIPTION_LENGTH,
+        description="Detailed description of the entity",
     )
     attributions: Optional[List[str]] = Field(
         None, description="Sources and attributions for the entity data"

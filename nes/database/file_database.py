@@ -29,7 +29,14 @@ class FileDatabase(EntityDatabase):
         file_path = self._id_to_path(entity.id)
         self._ensure_dir(file_path)
         with open(file_path, "w") as f:
-            json.dump(entity.model_dump(), f, default=str, ensure_ascii=False, sort_keys=True, indent=2)
+            json.dump(
+                entity.model_dump(),
+                f,
+                default=str,
+                ensure_ascii=False,
+                sort_keys=True,
+                indent=2,
+            )
         return entity
 
     async def get_entity(self, entity_id: str) -> Optional[Entity]:
@@ -48,11 +55,11 @@ class FileDatabase(EntityDatabase):
         return False
 
     async def list_entities(
-        self, 
-        limit: int = 100, 
+        self,
+        limit: int = 100,
         offset: int = 0,
         type: Optional[str] = None,
-        subtype: Optional[str] = None
+        subtype: Optional[str] = None,
     ) -> List[Entity]:
         # Build search path based on type/subtype
         if subtype and type:
@@ -61,7 +68,7 @@ class FileDatabase(EntityDatabase):
             search_path = self.root_path / "entity" / type
         else:
             search_path = self.root_path
-        
+
         entities = []
         for file_path in search_path.rglob("*.json"):
             try:
@@ -79,7 +86,14 @@ class FileDatabase(EntityDatabase):
         file_path = self._id_to_path(relationship.id)
         self._ensure_dir(file_path)
         with open(file_path, "w") as f:
-            json.dump(relationship.model_dump(), f, default=str, ensure_ascii=False, sort_keys=True, indent=2)
+            json.dump(
+                relationship.model_dump(),
+                f,
+                default=str,
+                ensure_ascii=False,
+                sort_keys=True,
+                indent=2,
+            )
         return relationship
 
     async def get_relationship(self, relationship_id: str) -> Optional[Relationship]:
@@ -117,7 +131,14 @@ class FileDatabase(EntityDatabase):
         file_path = self._id_to_path(version.id)
         self._ensure_dir(file_path)
         with open(file_path, "w") as f:
-            json.dump(version.model_dump(), f, default=str, ensure_ascii=False, sort_keys=True, indent=2)
+            json.dump(
+                version.model_dump(),
+                f,
+                default=str,
+                ensure_ascii=False,
+                sort_keys=True,
+                indent=2,
+            )
         return version
 
     async def get_version(self, version_id: str) -> Optional[Version]:
@@ -153,7 +174,14 @@ class FileDatabase(EntityDatabase):
         file_path = self._id_to_path(actor.id)
         self._ensure_dir(file_path)
         with open(file_path, "w") as f:
-            json.dump(actor.model_dump(), f, default=str, ensure_ascii=False, sort_keys=True, indent=2)
+            json.dump(
+                actor.model_dump(),
+                f,
+                default=str,
+                ensure_ascii=False,
+                sort_keys=True,
+                indent=2,
+            )
         return actor
 
     async def get_actor(self, actor_id: str) -> Optional[Actor]:

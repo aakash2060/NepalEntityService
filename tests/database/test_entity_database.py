@@ -10,7 +10,7 @@ import pytest
 from nes.core.models.base import Name
 from nes.core.models.entity import Organization, Person
 from nes.core.models.relationship import Relationship
-from nes.core.models.version import Actor, Version
+from nes.core.models.version import Actor, Version, VersionSummary
 from nes.database.entity_database import EntityDatabase
 from nes.database.file_database import FileDatabase
 
@@ -44,37 +44,50 @@ def sample_version(sample_actor):
 
 
 @pytest.fixture
-def sample_person(sample_version):
-    """Create a sample person entity for testing."""
-    return Person(
-        slug="harka-sampang",
-        names=[Name(kind="DEFAULT", value="Harka Sampang", lang="ne")],
-        versionInfo=sample_version,
+def sample_version_summary(sample_actor):
+    """Create a sample version summary for testing."""
+    return VersionSummary(
+        entityOrRelationshipId="entity:person/harka-sampang",
+        type="ENTITY",
+        versionNumber=1,
+        actor=sample_actor,
+        changeDescription="Test version",
         createdAt=datetime.now(),
     )
 
 
 @pytest.fixture
-def sample_organization(sample_version):
+def sample_person(sample_version_summary):
+    """Create a sample person entity for testing."""
+    return Person(
+        slug="harka-sampang",
+        names=[Name(kind="DEFAULT", value="Harka Sampang", lang="ne")],
+        versionSummary=sample_version_summary,
+        createdAt=datetime.now(),
+    )
+
+
+@pytest.fixture
+def sample_organization(sample_version_summary):
     """Create a sample organization entity for testing."""
     return Organization(
         slug="nepal-communist-party",
         type="organization",
         names=[Name(kind="DEFAULT", value="Nepal Communist Party", lang="ne")],
-        versionInfo=sample_version,
+        versionSummary=sample_version_summary,
         createdAt=datetime.now(),
     )
 
 
 @pytest.fixture
-def sample_relationship(sample_version):
+def sample_relationship(sample_version_summary):
     """Create a sample relationship for testing."""
     return Relationship(
         sourceEntityId="entity:person/harka-sampang",
         targetEntityId="entity:organization/nepal-communist-party",
         type="MEMBER_OF",
         startDate=date(2020, 1, 1),
-        versionInfo=sample_version,
+        versionSummary=sample_version_summary,
         createdAt=datetime.now(),
     )
 
@@ -181,10 +194,18 @@ async def test_pagination_consistency(temp_db, sample_version):
 
     entities = []
     for i in range(10):
+        version_summary = VersionSummary(
+            entityOrRelationshipId=f"entity:person/person-{i}",
+            type="ENTITY",
+            versionNumber=1,
+            actor=actors[0],
+            changeDescription=f"Person {i} version",
+            createdAt=datetime.now(),
+        )
         entity = Person(
             slug=f"person-{i}",
             names=[Name(kind="DEFAULT", value=f"Person {i}", lang="ne")],
-            versionInfo=versions[0],
+            versionSummary=version_summary,
             createdAt=datetime.now(),
         )
         entities.append(entity)
@@ -192,11 +213,19 @@ async def test_pagination_consistency(temp_db, sample_version):
 
     relationships = []
     for i in range(10):
+        rel_version_summary = VersionSummary(
+            entityOrRelationshipId=f"relationship:person-{i}:org-{i}",
+            type="RELATIONSHIP",
+            versionNumber=1,
+            actor=actors[0],
+            changeDescription=f"Relationship {i} version",
+            createdAt=datetime.now(),
+        )
         relationship = Relationship(
             sourceEntityId=f"entity:person/person-{i}",
             targetEntityId=f"entity:organization/org-{i}",
             type="MEMBER_OF",
-            versionInfo=versions[0],
+            versionSummary=rel_version_summary,
             createdAt=datetime.now(),
         )
         relationships.append(relationship)

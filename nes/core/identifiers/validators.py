@@ -4,8 +4,7 @@ import re
 
 from ..constraints import (ENTITY_SUBTYPE_PATTERN, ENTITY_TYPE_PATTERN,
                            MAX_SLUG_LENGTH, MAX_SUBTYPE_LENGTH,
-                           MAX_TYPE_LENGTH, MIN_SLUG_LENGTH,
-                           SLUG_PATTERN)
+                           MAX_TYPE_LENGTH, MIN_SLUG_LENGTH, SLUG_PATTERN)
 from .builders import (break_actor_id, break_entity_id, break_relationship_id,
                        break_version_id)
 

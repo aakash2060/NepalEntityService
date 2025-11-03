@@ -25,11 +25,11 @@ class EntityDatabase(ABC):
 
     @abstractmethod
     async def list_entities(
-        self, 
-        limit: int = 100, 
+        self,
+        limit: int = 100,
         offset: int = 0,
         type: Optional[EntityType] = None,
-        subtype: Optional[str] = None
+        subtype: Optional[str] = None,
     ) -> List[Entity]:
         pass
 
@@ -65,6 +65,11 @@ class EntityDatabase(ABC):
 
     @abstractmethod
     async def list_versions(self, limit: int = 100, offset: int = 0) -> List[Version]:
+        """List versions.
+
+        TODO: This method should be changed to require an entity_id or relationship_id
+        parameter to list versions for a specific entity or relationship.
+        """
         pass
 
     @abstractmethod

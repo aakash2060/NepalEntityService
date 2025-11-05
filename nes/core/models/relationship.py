@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, computed_field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
 from nes.core.identifiers import build_relationship_id, validate_entity_id
 
@@ -21,26 +21,26 @@ RelationshipType = Literal[
 
 
 class Relationship(BaseModel):
-    model_config = {"extra": "forbid"}
+    model_config = ConfigDict(extra="forbid")
 
-    sourceEntityId: str
-    targetEntityId: str
+    source_entity_id: str
+    target_entity_id: str
     type: RelationshipType
 
-    startDate: Optional[date] = None
-    endDate: Optional[date] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
 
     attributes: Optional[Dict[str, Any]] = None
 
-    versionSummary: Optional[VersionSummary] = Field(
+    version_summary: Optional[VersionSummary] = Field(
         None, description="Summary of the latest version information"
     )
-    createdAt: Optional[datetime] = None
+    created_at: Optional[datetime] = None
     attributions: Optional[List[str]] = Field(
         None, description="Sources and attributions for the relationship data"
     )
 
-    @field_validator("sourceEntityId", "targetEntityId")
+    @field_validator("source_entity_id", "target_entity_id")
     @classmethod
     def validate_entity_ids(cls, v):
         return validate_entity_id(v)
@@ -49,5 +49,5 @@ class Relationship(BaseModel):
     @property
     def id(self) -> str:
         return build_relationship_id(
-            self.sourceEntityId, self.targetEntityId, self.type
+            self.source_entity_id, self.target_entity_id, self.type
         )

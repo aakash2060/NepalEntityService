@@ -2,39 +2,69 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic import (BaseModel, Field, TypeAdapter, computed_field,
-                      field_validator)
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    computed_field,
+    field_validator,
+)
 
 from nes.core.identifiers import build_entity_id
 
-from ..constraints import (ENTITY_SUBTYPE_PATTERN, ENTITY_TYPE_PATTERN,
-                           MAX_DESCRIPTION_LENGTH,
-                           MAX_SHORT_DESCRIPTION_LENGTH, MAX_SLUG_LENGTH,
-                           MAX_SUBTYPE_LENGTH, MAX_TYPE_LENGTH,
-                           MIN_SLUG_LENGTH, SLUG_PATTERN)
-from .base import ContactInfo, Name
-from .person import Education, Position
+from ..constraints import (
+    MAX_SLUG_LENGTH,
+    MIN_SLUG_LENGTH,
+    SLUG_PATTERN,
+)
+from .base import LangText, Contact, Name, NameKind
 from .version import VersionSummary
 
-EntityType = Literal["person", "organization", "location"]
-ENTITY_TYPES = ["person", "organization", "location"]
 
+class IdentifierScheme(str, Enum):
+    """External identifier schemes."""
 
-class GovernmentType(str, Enum):
-    """Types of government entities."""
-
-    FEDERAL = "federal"
-    PROVINCIAL = "provincial"
-    LOCAL = "local"
+    WIKIPEDIA = "wikipedia"
+    WIKIDATA = "wikidata"
+    TWITTER = "twitter"
+    FACEBOOK = "facebook"
+    INSTAGRAM = "instagram"
+    LINKEDIN = "linkedin"
+    YOUTUBE = "youtube"
+    GITHUB = "github"
+    DOI = "doi"
+    ORCID = "orcid"
+    OFFICIAL_WEBSITE = "official_website"
     OTHER = "other"
-    UNKNOWN = "unknown"
 
 
-class LocationType(str, Enum):
-    """Types of location entities."""
+class ExternalIdentifier(BaseModel):
+    """A normalized external identifier reference."""
 
+    scheme: IdentifierScheme = Field(..., description="Type of external identifier")
+    value: str = Field(..., min_length=1, description="Identifier value")
+    url: Optional[AnyUrl] = Field(None, description="URL to the external resource")
+
+
+class EntityType(str, Enum):
+    """Types of entities."""
+
+    PERSON = "person"
+    ORGANIZATION = "organization"
+    LOCATION = "location"
+
+
+class EntitySubType(str, Enum):
+    """Subtypes for entities."""
+
+    # Organization subtypes
+    POLITICAL_PARTY = "political_party"
+    GOVERNMENT_BODY = "government_body"
+
+    # Location subtypes (using LocationType values)
     PROVINCE = "province"
     DISTRICT = "district"
     METROPOLITAN_CITY = "metropolitan_city"
@@ -45,23 +75,10 @@ class LocationType(str, Enum):
     CONSTITUENCY = "constituency"
 
 
-# Administrative levels for location entities
-ADMINISTRATIVE_LEVELS = {
-    LocationType.PROVINCE.value: 1,
-    LocationType.DISTRICT.value: 2,
-    LocationType.METROPOLITAN_CITY.value: 3,
-    LocationType.SUB_METROPOLITAN_CITY.value: 3,
-    LocationType.MUNICIPALITY.value: 3,
-    LocationType.RURAL_MUNICIPALITY: 3,
-    LocationType.WARD.value: 4,
-    LocationType.CONSTITUENCY.value: None,  # Electoral boundary, not administrative
-}
-
-
 class Entity(BaseModel):
     """Base entity model. At least one name with kind='DEFAULT' should be provided for all entities."""
 
-    model_config = {"extra": "forbid"}
+    model_config = ConfigDict(extra="forbid")
 
     slug: str = Field(
         ...,
@@ -72,29 +89,25 @@ class Entity(BaseModel):
     )
     type: EntityType = Field(
         ...,
-        max_length=MAX_TYPE_LENGTH,
-        pattern=ENTITY_TYPE_PATTERN,
-        description=f"Type of entity {ENTITY_TYPES}",
+        description="Type of entity",
     )
-    subType: Optional[str] = Field(
+    sub_type: Optional[EntitySubType] = Field(
         None,
-        max_length=MAX_SUBTYPE_LENGTH,
-        pattern=ENTITY_SUBTYPE_PATTERN,
         description="Subtype classification for the entity",
     )
     names: List[Name] = Field(
         ..., description="List of names associated with the entity"
     )
-    misspelledNames: Optional[List[Name]] = Field(
+    misspelled_names: Optional[List[Name]] = Field(
         None, description="List of misspelled or alternative name variations"
     )
-    versionSummary: VersionSummary = Field(
+    version_summary: VersionSummary = Field(
         ..., description="Summary of the latest version information"
     )
-    createdAt: datetime = Field(
+    created_at: datetime = Field(
         ..., description="Timestamp when the entity was created"
     )
-    identifiers: Optional[Dict[str, Any]] = Field(
+    identifiers: Optional[List[ExternalIdentifier]] = Field(
         None, description="External identifiers for the entity"
     )
     tags: Optional[List[str]] = Field(
@@ -102,120 +115,35 @@ class Entity(BaseModel):
     )
     attributes: Optional[Dict[str, Any]] = Field(
         None,
-        description="Additional attributes for the entity. Keys with 'sys:' prefix are reserved for special system fields.",
+        description="Additional attributes for the entity.",
     )
-    contacts: Optional[List[ContactInfo]] = Field(
+    contacts: Optional[List[Contact]] = Field(
         None, description="Contact information for the entity"
     )
-    short_description: Optional[str] = Field(
+    short_description: Optional[LangText] = Field(
         None,
-        max_length=MAX_SHORT_DESCRIPTION_LENGTH,
         description="Brief description of the entity",
     )
-    description: Optional[str] = Field(
+    description: Optional[LangText] = Field(
         None,
-        max_length=MAX_DESCRIPTION_LENGTH,
         description="Detailed description of the entity",
     )
-    attributions: Optional[List[str]] = Field(
+    attributions: Optional[LangText] = Field(
         None, description="Sources and attributions for the entity data"
     )
 
     @computed_field
     @property
     def id(self) -> str:
-        return build_entity_id(self.type, self.subType, self.slug)
+        return build_entity_id(self.type, self.sub_type, self.slug)
 
     @field_validator("names")
     @classmethod
-    def validate_names(cls, v):
-        if not any(name.kind == "DEFAULT" for name in v):
-            raise ValueError('At least one name with kind="DEFAULT" is required')
+    def validate_names(cls, v: List[Name]):
+        if not any(name.kind == NameKind.PRIMARY for name in v):
+            raise ValueError(f'At least one name with kind="{NameKind.PRIMARY}" is required')
 
         return v
 
-    def _get_sys_attribute(self, key: str, type_hint):
-        """Get a system attribute and cast to the specified type."""
-        if not self.attributes:
-            return None
-        value = self.attributes.get(f"sys:{key}")
-        if value is None:
-            return None
-        return TypeAdapter(type_hint).validate_python(value)
-
-    def _set_sys_attribute(self, key: str, value):
-        """Set a system attribute."""
-        if self.attributes is None:
-            self.attributes = {}
-        if value is None:
-            self.attributes.pop(f"sys:{key}", None)
-        else:
-            self.attributes[f"sys:{key}"] = value
-
-    @classmethod
-    def _sys_prop(cls, key: str, type_hint):
-        """Create a property for a system attribute with automatic getter/setter."""
-        return property(
-            lambda self: self._get_sys_attribute(key, type_hint),
-            lambda self, value: self._set_sys_attribute(key, value),
-        )
 
 
-class Person(Entity):
-    type: Literal["person"] = Field(
-        default="person", description="Entity type, always person"
-    )
-
-    education = Entity._sys_prop("education", List[Education])
-    positions = Entity._sys_prop("positions", List[Position])
-
-
-class Organization(Entity):
-    type: Literal["organization"] = Field(
-        default="organization", description="Entity type, always organization"
-    )
-
-
-class PoliticalParty(Organization):
-    subType: Literal["political_party"] = Field(
-        default="political_party",
-        description="Organization subtype, always political_party",
-    )
-
-
-class GovernmentBody(Organization):
-    subType: Literal["government_body"] = Field(
-        default="government_body",
-        description="Organization subtype, always government_body",
-    )
-
-    # Type of government (federal, state, local)
-    governmentType = Entity._sys_prop("governmentType", Optional[GovernmentType])
-
-
-class Location(Entity):
-    type: Literal["location"] = Field(
-        default="location", description="Entity type, always location"
-    )
-
-    # Location-specific system properties
-    locationType = Entity._sys_prop("locationType", Optional[LocationType])
-    parentLocation = Entity._sys_prop(
-        "parentLocation", Optional[str]
-    )  # Entity ID of parent
-    administrativeLevel = Entity._sys_prop("administrativeLevel", Optional[int])
-
-
-# Entity type/subtype to class mapping
-# NOTE: When adding new subclasses of Entity, this dict must be updated for deserialization to work properly
-ENTITY_TYPE_MAP = {
-    "person": {
-        None: Person,
-    },
-    "organization": {
-        None: Organization,
-        "political_party": PoliticalParty,
-        "government": GovernmentBody,
-    },
-    "location": {None: Location, **{key.value: Location for key in LocationType}},
-}

@@ -1,8 +1,11 @@
 """Models for Nepal Entity Service."""
 
-from .base import ContactInfo, CursorPage, Name
-from .entity import (ADMINISTRATIVE_LEVELS, ENTITY_TYPES, Entity, EntityType,
-                     Location, LocationType, Organization, Person)
+from .base import Contact, CursorPage, Name
+from .entity import Entity, EntityType
+from .entity_type_map import ENTITY_TYPE_MAP
+from .person import Person
+from .organization import Organization
+from .location import ADMINISTRATIVE_LEVELS, Location, LocationType
 from .relationship import Relationship, RelationshipType
 from .version import Actor, Version, VersionType
 
@@ -13,12 +16,12 @@ __all__ = [
     "Location",
     "LocationType",
     "Name",
-    "ContactInfo",
+    "Contact",
     "Actor",
     "Version",
     "Entity",
     "EntityType",
-    "ENTITY_TYPES",
+    "ENTITY_TYPE_MAP",
     "Relationship",
     "RelationshipType",
     "VersionType",

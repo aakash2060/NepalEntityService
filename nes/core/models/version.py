@@ -1,9 +1,10 @@
 """Version models using Pydantic."""
 
 from datetime import datetime
-from typing import Any, Dict, Literal, Optional
+from enum import Enum
+from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field, computed_field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
 from nes.core.identifiers import build_version_id
 
@@ -26,25 +27,27 @@ class Actor(BaseModel):
         return f"actor:{self.slug}"
 
 
-VersionType = Literal["ENTITY", "RELATIONSHIP"]
+class VersionType(str, Enum):
+    ENTITY = "ENTITY"
+    RELATIONSHIP = "RELATIONSHIP"
 
 
 class VersionSummary(BaseModel):
-    model_config = {"extra": "forbid"}
+    model_config = ConfigDict(extra="forbid")
 
-    entityOrRelationshipId: str = Field(
+    entity_or_relationship_id: str = Field(
         ..., description="ID of the entity or relationship this version belongs to"
     )
     type: VersionType
-    versionNumber: int
+    version_number: int
     actor: Actor
-    changeDescription: str
-    createdAt: datetime
+    change_description: str
+    created_at: datetime
 
     @computed_field
     @property
     def id(self) -> str:
-        return build_version_id(self.entityOrRelationshipId, self.versionNumber)
+        return build_version_id(self.entity_or_relationship_id, self.version_number)
 
 
 class Version(VersionSummary):

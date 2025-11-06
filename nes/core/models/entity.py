@@ -20,7 +20,7 @@ from ..constraints import (
     MIN_SLUG_LENGTH,
     SLUG_PATTERN,
 )
-from .base import LangText, Contact, Name, NameKind
+from .base import EntityPicture, LangText, Contact, Name, NameKind
 from .version import VersionSummary
 
 
@@ -128,8 +128,11 @@ class Entity(BaseModel):
         None,
         description="Detailed description of the entity",
     )
-    attributions: Optional[LangText] = Field(
+    attributions: Optional[List[LangText]] = Field(
         None, description="Sources and attributions for the entity data"
+    )
+    pictures: Optional[List[EntityPicture]] = Field(
+        None, description="Pictures associated with the entity"
     )
 
     @computed_field

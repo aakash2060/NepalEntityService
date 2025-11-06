@@ -14,6 +14,9 @@ from pydantic import (
     model_validator,
 )
 
+from nes.core.identifiers.builders import break_entity_id
+from nes.core.identifiers.validators import is_valid_entity_id
+
 
 # E.164 phone number, e.g., "+977123456789"
 E164PhoneStr = constr(pattern=r"^\+[1-9]\d{1,14}$")
@@ -90,24 +93,33 @@ class CursorPage(BaseModel):
     count: int
 
 
+class NameParts(BaseModel):
+    """Name parts dictionary."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    full: str
+    first: Optional[str] = None
+    middle: Optional[str] = None
+    last: Optional[str] = None
+    prefix: Optional[str] = None
+    suffix: Optional[str] = None
+
+
 class Name(BaseModel):
     """Represents a name with language and kind classification."""
 
     model_config = ConfigDict(extra="forbid")
 
-    parts: Dict[NamePart, str] = Field(..., description="Name parts dictionary")
-    lang: LangField
-    kind: NameKind = Field(
-        ...,
-        description="Type of name",
-    )
+    kind: NameKind = Field(..., description="Type of name")
+    en: Optional[NameParts] = Field(None, description="English/romanized name parts")
+    ne: Optional[NameParts] = Field(None, description="Nepali (Devanagari) name parts")
 
-    @field_validator("parts")
-    @classmethod
-    def validate_full_name_required(cls, v):
-        if NamePart.FULL not in v:
-            raise ValueError("A Name must always have the FULL name part.")
-        return v
+    @model_validator(mode="after")
+    def validate_at_least_one_language(self) -> "Name":
+        if not self.en and not self.ne:
+            raise ValueError("Name must have at least one of en or ne")
+        return self
 
 
 class ContactType(str, Enum):
@@ -152,3 +164,44 @@ class Contact(BaseModel):
                 raise ValueError("PHONE/WHATSAPP must be E.164 (e.g., +977123456789)")
         # TELEGRAM/WECHAT/OTHER are free-form (usernames/IDs/handles)
         return self
+
+
+class Address(BaseModel):
+    """Address information."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    location_id: Optional[str] = Field(None, description="Location identifier")
+    description: Optional[str] = Field(None, description="Address description")
+
+    @field_validator("location_id")
+    @classmethod
+    def validate_location_id(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if not is_valid_entity_id(v):
+            raise ValueError("location_id must be a valid entity ID")
+        components = break_entity_id(v)
+        if components.type != "location":
+            raise ValueError("location_id must reference a location entity")
+        return v
+
+
+class EntityPictureType(str, Enum):
+    """Types of entity pictures."""
+
+    THUMB = "thumb"
+    FULL = "full"
+    WIDE = "wide"
+
+
+class EntityPicture(BaseModel):
+    """Picture information for an entity."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: EntityPictureType = Field(..., description="Picture type")
+    url: str = Field(..., description="Picture URL")
+    width: Optional[int] = Field(None, description="Picture width in pixels")
+    height: Optional[int] = Field(None, description="Picture height in pixels")
+    description: Optional[str] = Field(None, description="Picture description")

@@ -15,6 +15,11 @@ def cli():
     pass
 
 
+# Import and register migrate command group
+from nes2.cli.migrate import migrate
+cli.add_command(migrate)
+
+
 # Server command group
 @cli.group()
 def server():

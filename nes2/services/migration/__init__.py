@@ -12,6 +12,7 @@ from nes2.services.migration.models import (
     MigrationResult,
     MigrationStatus,
 )
+from nes2.services.migration.runner import MigrationRunner
 from nes2.services.migration.validation import (
     ValidationResult,
     validate_migration,
@@ -25,6 +26,7 @@ __all__ = [
     "MigrationContext",
     "MigrationManager",
     "MigrationResult",
+    "MigrationRunner",
     "MigrationStatus",
     "ValidationResult",
     "validate_migration",

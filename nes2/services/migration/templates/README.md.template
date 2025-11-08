@@ -1,0 +1,73 @@
+# Migration: {prefix}-{name}
+
+## Purpose
+
+[TODO: Describe the purpose of this migration. What problem does it solve? What data is being added or updated?]
+
+Example:
+- Import initial location data for Nepal's administrative divisions
+- Update entity names to match official government records
+- Add relationships between political figures and their parties
+
+## Data Sources
+
+[TODO: List all data sources used in this migration. Include URLs, file references, and any relevant context about data provenance.]
+
+Example:
+- Nepal Government Open Data Portal: https://data.gov.np/...
+- Wikipedia: https://en.wikipedia.org/wiki/...
+- Manual research and verification
+- CSV file exported from government database (included in migration folder)
+
+## Changes
+
+[TODO: Describe the specific changes this migration makes to the database. Be as detailed as possible.]
+
+Example:
+- Creates 753 location entities:
+  - 7 provinces
+  - 77 districts
+  - 669 municipalities (metropolitan cities, sub-metropolitan cities, municipalities, rural municipalities)
+- Includes both Nepali (Devanagari) and English names for all locations
+- Includes official administrative codes from 2023 census
+- Creates hierarchical relationships (district -> province, municipality -> district)
+
+## Dependencies
+
+[TODO: List any dependencies on other migrations or external requirements.]
+
+Example:
+- None (this is an initial migration)
+- Requires migration 000-initial-locations to be run first
+- Requires openpyxl package for Excel file reading (pip install openpyxl)
+
+## Notes
+
+[TODO: Add any additional notes, warnings, or considerations for reviewers and maintainers.]
+
+Example:
+- This migration is deterministic and will produce identical results on each run
+- Processing time: approximately 2-3 minutes for 753 entities
+- All data has been manually verified against official government sources
+- Some entity names may have multiple valid transliterations; we've chosen the most common form
+- If re-run, the migration will skip entities that already exist (idempotent)
+
+## Testing
+
+[TODO: Describe how to test this migration locally before submitting.]
+
+Example:
+- Run migration in dry-run mode: `nes2 migrate run {prefix}-{name} --dry-run`
+- Verify entity count matches expected: 753 locations
+- Check that all entities have both English and Nepali names
+- Verify relationships are created correctly
+- Review sample entities in the database to ensure data quality
+
+## Rollback
+
+[TODO: Describe how to rollback this migration if needed.]
+
+Example:
+- Use Git revert on the database repository commit
+- Manually delete created entities using the Publication Service
+- Run a reverse migration (if provided)

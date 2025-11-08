@@ -8,8 +8,14 @@ RUN pip install poetry && \
     poetry config virtualenvs.create false && \
     poetry install --extras api --only=main
 
+# Copy database directory and ensure v2 subdirectory exists
 COPY nes-db/ ./nes-db/
+RUN mkdir -p ./nes-db/v2
+
 COPY docs/ ./docs/
+
+# Set default NES_DB_URL for container
+ENV NES_DB_URL=file:///app/nes-db/v2
 
 EXPOSE 8195
 

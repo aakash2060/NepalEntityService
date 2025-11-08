@@ -24,6 +24,37 @@ pip install nepal-entity-service[scraping]
 pip install nepal-entity-service[all]
 ```
 
+## Configuration
+
+### Database Setup
+
+The Nepal Entity Service uses a file-based database. Configure the database path using the `NES_DB_URL` environment variable:
+
+```bash
+# Create .env file from example
+cp .env.example .env
+
+# Edit .env and set your database path (must use file:// protocol with absolute path)
+NES_DB_URL=file:///absolute/path/to/nes-db/v2
+```
+
+**Important:** The path must be absolute (starting from filesystem root `/`).
+
+#### Git Submodule
+
+The database is managed as a Git submodule. Initialize it after cloning:
+
+```bash
+# Clone with submodules
+git clone --recurse-submodules git@github.com:NewNepal-org/NepalEntityService.git
+
+# Or initialize after cloning
+git submodule init
+git submodule update
+```
+
+For detailed database setup instructions, see [DATABASE_SETUP.md](DATABASE_SETUP.md).
+
 ## Usage
 
 ### Scripts
@@ -34,6 +65,9 @@ poetry run nes2-api
 
 # Start development server with auto-reload (nes2)
 poetry run nes2-dev
+
+# Check relationship integrity
+poetry run nes2 integrity check
 
 # Legacy nes commands
 poetry run nes-api

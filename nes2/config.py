@@ -4,6 +4,7 @@ import os
 import logging
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -23,21 +24,40 @@ class Config:
     def get_db_path(cls, override_path: Optional[str] = None) -> Path:
         """Get the database path.
 
+        Supports multiple configuration methods in order of precedence:
+        1. override_path parameter
+        2. NES_DB_URL environment variable (file:// protocol only)
+        3. Default path (nes-db/v2)
+
         Args:
             override_path: Optional path to override the default database path
 
         Returns:
             Path object for the database directory
+            
+        Raises:
+            ValueError: If NES_DB_URL uses unsupported protocol
         """
         if override_path:
             return Path(override_path)
 
-        # Check for environment variable
-        env_path = os.getenv("NES2_DB_PATH")
-        if env_path:
-            return Path(env_path)
+        # Check for NES_DB_URL environment variable (file:// protocol)
+        database_url = os.getenv("NES_DB_URL")
+        if database_url:
+            parsed = urlparse(database_url)
+            if parsed.scheme != "file":
+                raise ValueError(
+                    f"NES_DB_URL must use 'file://' protocol, got '{parsed.scheme}://'. "
+                    f"Example: file:///absolute/path/to/nes-db/v2"
+                )
+            # Extract path from file:// URL
+            # file:///path/to/db -> /path/to/db
+            db_path = parsed.path
+            logger.info(f"Using NES_DB_URL: {database_url} -> {db_path}")
+            return Path(db_path)
 
         # Use default path
+        logger.info(f"Using default database path: {cls.DEFAULT_DB_PATH}")
         return Path(cls.DEFAULT_DB_PATH)
 
     @classmethod

@@ -304,8 +304,8 @@
     - Ensure all tests still pass after refactoring
     - _Requirements: Code quality_
 
-- [ ] 5. Implement Scraping Service
-  - [ ] 5.1 Write Scraping Service tests FIRST
+- [-] 5. Implement Scraping Service
+  - [x] 5.1 Write Scraping Service tests FIRST
     - Write tests for Wikipedia extraction
     - Write tests for data normalization
     - Write tests for translation capabilities
@@ -313,7 +313,7 @@
     - Write tests for external source search
     - _Requirements: 9.5, 5.1, TDD_
 
-  - [ ] 5.2 Implement Scraping Service foundation (Green)
+  - [x] 5.2 Implement Scraping Service foundation (Green)
     - Create `nes2/services/scraping/` directory with `__init__.py`
     - Create `nes2/services/scraping/service.py` with ScrapingService class
     - Initialize with LLM providers and web scraping tools
@@ -321,7 +321,7 @@
     - Ensure foundation tests pass
     - _Requirements: 9.5, 5.1_
 
-  - [ ] 5.3 Implement Web Scraper component (Green)
+  - [x] 5.3 Implement Web Scraper component (Green)
     - Create `nes2/services/scraping/web_scraper.py` with WebScraper class
     - Add multi-source extraction (Wikipedia, government sites, news)
     - Implement rate limiting and respectful scraping
@@ -330,7 +330,7 @@
     - Ensure web scraper tests pass
     - _Requirements: 5.1_
 
-  - [ ] 5.4 Implement Translation component (Green)
+  - [x] 5.4 Implement Translation component (Green)
     - Create `nes2/services/scraping/translation.py` with translation utilities
     - Add Nepali to English translation
     - Add English to Nepali translation
@@ -339,7 +339,7 @@
     - Ensure translation tests pass
     - _Requirements: 5.1, 7.1_
 
-  - [ ] 5.5 Implement Data Normalization component (Green)
+  - [x] 5.5 Implement Data Normalization component (Green)
     - Create `nes2/services/scraping/normalization.py` with normalization utilities
     - Add LLM-powered data structuring
     - Implement extraction of structured data from unstructured text
@@ -349,7 +349,7 @@
     - Ensure normalization tests pass
     - _Requirements: 5.2, 5.3_
 
-  - [ ] 5.6 Implement scraping service methods (Green)
+  - [x] 5.6 Implement scraping service methods (Green)
     - Implement `extract_from_wikipedia()` method in ScrapingService
     - Add `normalize_person_data()` method
     - Implement `extract_relationships()` method
@@ -358,7 +358,7 @@
     - Ensure all scraping service tests pass
     - _Requirements: 5.1, 5.2_
 
-  - [ ] 5.7 Refactor Scraping Service
+  - [x] 5.7 Refactor Scraping Service
     - Refactor for code quality and maintainability
     - Optimize scraping performance
     - Improve error handling and retry logic

@@ -5,8 +5,6 @@ import logging
 import os
 from typing import Any, Dict, Optional
 
-from openai import AsyncOpenAI
-
 from .base import BaseLLMProvider
 
 logger = logging.getLogger(__name__)
@@ -39,6 +37,11 @@ class OpenAIProvider(BaseLLMProvider):
             top_p: Nucleus sampling parameter
             api_key: OpenAI API key (optional, uses env if not provided)
         """
+
+        try:
+            from openai import AsyncOpenAI
+        except ImportError:
+            raise ImportError("The 'openai' package is not installed. ")
 
         key = api_key or os.getenv("OPENAI_API_KEY")
         if not key:

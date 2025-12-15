@@ -10,6 +10,7 @@ from urllib.request import urlopen
 
 from nes.core.identifiers import build_entity_id
 from nes.core.models import ADMINISTRATIVE_LEVELS
+from nes.core.models.entity import EntitySubType, EntityType
 from nes.core.models.location import LocationType
 from nes.core.models.version import Author
 from nes.core.utils.devanagari import contains_devanagari
@@ -251,6 +252,17 @@ async def migrate(context: MigrationContext) -> None:
         4: "rural_municipality",
     }
 
+    # Subtype string to EntitySubType enum mapping
+    subtype_enum_map = {
+        "province": EntitySubType.PROVINCE,
+        "district": EntitySubType.DISTRICT,
+        "metropolitan_city": EntitySubType.METROPOLITAN_CITY,
+        "sub_metropolitan_city": EntitySubType.SUB_METROPOLITAN_CITY,
+        "municipality": EntitySubType.MUNICIPALITY,
+        "rural_municipality": EntitySubType.RURAL_MUNICIPALITY,
+        "ward": EntitySubType.WARD,
+    }
+
     # Process provinces
     for province_en, province_ne in zip(english_data, nepali_data):
         assert (
@@ -271,9 +283,11 @@ async def migrate(context: MigrationContext) -> None:
         )
 
         await context.publication.create_entity(
+            entity_type=EntityType.LOCATION,
             entity_data=province_data,
             author_id=author_id,
             change_description=CHANGE_DESCRIPTION,
+            entity_subtype=subtype_enum_map["province"],
         )
         counts["province"] += 1
         context.log(f"Created province: {province_en['name']} ({province_ne['name']})")
@@ -313,9 +327,11 @@ async def migrate(context: MigrationContext) -> None:
             )
 
             await context.publication.create_entity(
+                entity_type=EntityType.LOCATION,
                 entity_data=district_data,
                 author_id=author_id,
                 change_description=CHANGE_DESCRIPTION,
+                entity_subtype=subtype_enum_map["district"],
             )
             counts["district"] += 1
 
@@ -362,9 +378,11 @@ async def migrate(context: MigrationContext) -> None:
                 )
 
                 await context.publication.create_entity(
+                    entity_type=EntityType.LOCATION,
                     entity_data=municipality_data,
                     author_id=author_id,
                     change_description=CHANGE_DESCRIPTION,
+                    entity_subtype=subtype_enum_map[subtype],
                 )
                 counts["municipality"] += 1
 
@@ -389,9 +407,11 @@ async def migrate(context: MigrationContext) -> None:
                     )
 
                     await context.publication.create_entity(
+                        entity_type=EntityType.LOCATION,
                         entity_data=ward_data,
                         author_id=author_id,
                         change_description=CHANGE_DESCRIPTION,
+                        entity_subtype=subtype_enum_map["ward"],
                     )
                     counts["ward"] += 1
 

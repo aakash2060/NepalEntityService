@@ -15,23 +15,28 @@ Nepal Entity Service is built on three core principles:
 ### Currently offering
 
 1. Location data
-    1. 7 Provinces
-    1. 77 Districts
-    1. 165 constituencies
-    1. 460 Rural municipalities (VDCs)
-    1. 11 Sub-metropolitician cities
-    1. 6 Municipalities
-    1. 6,743 wards
-2. Political Parties
+    1. 7 Provinces (`location/province`)
+    1. 77 Districts (`location/district`)
+    1. 165 constituencies (`location/constituency`)
+    1. 460 Rural municipalities (VDCs) (`location/rural_municipality`)
+    1. 11 Sub-metropolitician cities (`location/sub_metropolitician_city`)
+    1. 6 Metropolitan Cities (`location/metropolitan_city`)
+    1. 276 Municipalities (`location/municipality`)
+    1. 6,743 wards (`location/ward`)
+2. Political Parties (`organization/political_party`)
     1. 124 registered political parties (Official NEC data from Kartik 2082)
-3. Politicians
+3. Politicians (`person`)
     1. 7,744 party candidates from 2079 B.S. national and provincial elections.
-4. Health Facilities
+4. Health Facilities (`organization/hospital`)
     1. 11,399 hospitals and health facilities from Nepal Health Facility Registry (NHFR)
+5. 204 Government Bodies (`organization/government_body`)
+6. 310 International organizations (`organization/international_org`)
+7. 122 NGOs (`organization/ngo`)
+8. 2,979 development projects (`project/development_project`)
 
 ### Near future plans
 1. Incorporate newly registered political parties
-1. Incorporate government bodies of all levels
+1. Incorporate complete government bodies data at all levels
 1. Incorporate current government leaders, and Nepali bureaucrats
 
 ## Documentation Index

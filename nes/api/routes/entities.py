@@ -19,6 +19,7 @@ from nes.api.responses import (
     RelationshipListResponse,
     VersionListResponse,
 )
+from nes.core.models.entity import EntityType
 from nes.services.search import SearchService
 
 logger = logging.getLogger(__name__)
@@ -80,13 +81,14 @@ async def list_entities(
         return await _batch_lookup_entities(ids=ids, search_service=search_service)
 
     # Validate entity_type if provided
-    if entity_type and entity_type not in ["person", "organization", "location"]:
+    valid_types = [t.value for t in EntityType]
+    if entity_type and entity_type not in valid_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
                 "error": {
                     "code": "INVALID_ENTITY_TYPE",
-                    "message": f"Invalid entity_type: {entity_type}. Must be one of: person, organization, location",
+                    "message": f"Invalid entity_type: {entity_type}. Must be one of: {', '.join(valid_types)}",
                 }
             },
         )

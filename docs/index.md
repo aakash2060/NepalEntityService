@@ -24,7 +24,7 @@ Nepal Entity Service is built on three core principles:
     1. 276 Municipalities (`location/municipality`)
     1. 6,743 wards (`location/ward`)
 2. Political Parties (`organization/political_party`)
-    1. 124 registered political parties (Official NEC data from Kartik 2082)
+    1. 151 registered political parties (Official data from National Election Commission)
 3. Politicians (`person`)
     1. 7,744 party candidates from 2079 B.S. national and provincial elections.
 4. Health Facilities (`organization/hospital`)

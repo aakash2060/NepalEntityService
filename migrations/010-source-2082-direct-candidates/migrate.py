@@ -456,7 +456,11 @@ async def import_candidates(context: MigrationContext) -> None:
 
         # Update electoral details
         if person.electoral_details:
-            person.electoral_details.candidacies.append(new_candidacy)
+            # Create a new list with existing candidacies plus the new one
+            updated_candidacies = list(person.electoral_details.candidacies) + [
+                new_candidacy
+            ]
+            person.electoral_details = ElectoralDetails(candidacies=updated_candidacies)
         else:
             person.electoral_details = ElectoralDetails(candidacies=[new_candidacy])
 

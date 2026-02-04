@@ -87,6 +87,7 @@ class EntityDatabase(ABC):
         entity_type: Optional[str] = None,
         sub_type: Optional[str] = None,
         attr_filters: Optional[Dict[str, Union[str, int, float, bool]]] = None,
+        tags: Optional[List[str]] = None,
         limit: int = 100,
         offset: int = 0,
     ) -> List[Entity]:
@@ -94,13 +95,14 @@ class EntityDatabase(ABC):
 
         Performs case-insensitive text search across entity name fields
         (both English and Nepali). Supports filtering by type, subtype,
-        and attributes. Results are ranked by relevance.
+        attributes, and tags. Results are ranked by relevance.
 
         Args:
             query: Text query to search for in entity names (case-insensitive)
             entity_type: Filter by entity type (person, organization, location)
             sub_type: Filter by entity subtype
             attr_filters: Filter by entity attributes (AND logic)
+            tags: Filter by tags (AND logic - entity must have ALL specified tags)
             limit: Maximum number of entities to return
             offset: Number of entities to skip
 

@@ -118,7 +118,7 @@ class FileDatabase(EntityDatabase):
                 return None
 
             try:
-                with open(file_path, "r") as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
                 return self._entity_from_dict(data)
@@ -450,12 +450,27 @@ class FileDatabase(EntityDatabase):
         # Check if all filter criteria match (AND logic)
         return all(attributes.get(k) == v for k, v in attr_filters.items())
 
+    def _entity_matches_tags(self, entity: Entity, tags: List[str]) -> bool:
+        """Check if entity has all specified tags (AND logic).
+
+        Args:
+            entity: Entity to check
+            tags: List of tags that entity must have
+
+        Returns:
+            True if entity has ALL specified tags, False otherwise
+        """
+        entity_tags = entity.tags or []
+        # Check if all required tags are present in entity's tags
+        return all(tag in entity_tags for tag in tags)
+
     async def search_entities(
         self,
         query: Optional[str] = None,
         entity_type: Optional[str] = None,
         sub_type: Optional[str] = None,
         attr_filters: Optional[Dict[str, Union[str, int, float, bool]]] = None,
+        tags: Optional[List[str]] = None,
         limit: int = 100,
         offset: int = 0,
     ) -> List[Entity]:
@@ -463,13 +478,14 @@ class FileDatabase(EntityDatabase):
 
         Performs case-insensitive text search across entity name fields
         (both English and Nepali). Supports filtering by type, subtype,
-        and attributes. Results are ranked by relevance.
+        attributes, and tags. Results are ranked by relevance.
 
         Args:
             query: Text query to search for in entity names (case-insensitive)
             entity_type: Filter by entity type (person, organization, location)
             sub_type: Filter by entity subtype
             attr_filters: Filter by entity attributes (AND logic)
+            tags: Filter by tags (AND logic - entity must have ALL specified tags)
             limit: Maximum number of entities to return
             offset: Number of entities to skip
 
@@ -497,7 +513,12 @@ class FileDatabase(EntityDatabase):
                 if not entity:
                     continue
 
-                # If no query, include all entities (filtered by type/attributes)
+                # Apply tag filtering (AND logic - entity must have ALL specified tags)
+                if tags and len(tags) > 0:
+                    if not self._entity_matches_tags(entity, tags):
+                        continue
+
+                # If no query, include all entities (filtered by type/attributes/tags)
                 if not normalized_query:
                     entities_with_scores.append((entity, 0))
                     continue
@@ -885,7 +906,7 @@ class FileDatabase(EntityDatabase):
         # Recursively find all JSON files
         for file_path in search_path.rglob("*.json"):
             try:
-                with open(file_path, "r") as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
                 # Check if this is a relationship (has source_entity_id)
@@ -979,7 +1000,7 @@ class FileDatabase(EntityDatabase):
         # Recursively find all JSON files
         for file_path in search_path.rglob("*.json"):
             try:
-                with open(file_path, "r") as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
                 # Check if this is a relationship (has source_entity_id)
@@ -1009,7 +1030,7 @@ class FileDatabase(EntityDatabase):
         data = version.model_dump(mode="json")
         data.pop("id", None)
 
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(
                 data,
                 f,
@@ -1028,7 +1049,7 @@ class FileDatabase(EntityDatabase):
         if not file_path.exists():
             return None
 
-        with open(file_path, "r") as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         return Version.model_validate(data)
@@ -1178,7 +1199,7 @@ class FileDatabase(EntityDatabase):
         data = author.model_dump(mode="json")
         data.pop("id", None)
 
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(
                 data,
                 f,
@@ -1197,7 +1218,7 @@ class FileDatabase(EntityDatabase):
         if not file_path.exists():
             return None
 
-        with open(file_path, "r") as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         return Author.model_validate(data)

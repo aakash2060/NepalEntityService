@@ -86,6 +86,19 @@ class InMemoryCachedReadDatabase(EntityDatabase):
 
             self._cache_warmed = True
 
+    def _entity_matches_tags(self, entity: Entity, tags: Tuple[str, ...]) -> bool:
+        """Check if entity has all specified tags (AND logic).
+
+        Args:
+            entity: Entity to check
+            tags: Tuple of tags that entity must have
+
+        Returns:
+            True if entity has ALL specified tags, False otherwise
+        """
+        entity_tags = entity.tags or []
+        return all(tag in entity_tags for tag in tags)
+
     async def put_entity(self, entity: Entity) -> Entity:
         """Not supported - read-only database."""
         raise ValueError("Read-only database does not support write operations")
@@ -183,6 +196,7 @@ class InMemoryCachedReadDatabase(EntityDatabase):
         attr_filters_tuple: Optional[
             Tuple[Tuple[str, Union[str, int, float, bool]], ...]
         ],
+        tags_tuple: Optional[Tuple[str, ...]],
         limit: int,
         offset: int,
     ) -> Tuple[Entity, ...]:
@@ -246,6 +260,12 @@ class InMemoryCachedReadDatabase(EntityDatabase):
                     if e.attributes and e.attributes.get(key) == value
                 ]
 
+        # Apply tag filters (AND logic - entity must have ALL specified tags)
+        if tags_tuple:
+            entities = [
+                e for e in entities if self._entity_matches_tags(e, tags_tuple)
+            ]
+
         # Apply pagination and return as tuple
         return tuple(entities[offset : offset + limit])
 
@@ -255,6 +275,7 @@ class InMemoryCachedReadDatabase(EntityDatabase):
         entity_type: Optional[str] = None,
         sub_type: Optional[str] = None,
         attr_filters: Optional[Dict[str, Union[str, int, float, bool]]] = None,
+        tags: Optional[List[str]] = None,
         limit: int = 100,
         offset: int = 0,
     ) -> List[Entity]:
@@ -266,13 +287,18 @@ class InMemoryCachedReadDatabase(EntityDatabase):
         if attr_filters:
             attr_filters_tuple = tuple(sorted(attr_filters.items()))
 
+        # Convert tags list to tuple for hashability
+        tags_tuple = None
+        if tags and len(tags) > 0:
+            tags_tuple = tuple(tags)
+
         # Create cache key
-        cache_key = f"search_entities:{query}:{entity_type}:{sub_type}:{attr_filters_tuple}:{limit}:{offset}"
+        cache_key = f"search_entities:{query}:{entity_type}:{sub_type}:{attr_filters_tuple}:{tags_tuple}:{limit}:{offset}"
 
         # Try to get from cache
         def create_value():
             return self._search_entities_impl(
-                query, entity_type, sub_type, attr_filters_tuple, limit, offset
+                query, entity_type, sub_type, attr_filters_tuple, tags_tuple, limit, offset
             )
 
         result_tuple = self._query_cache.get(key=cache_key, createfunc=create_value)

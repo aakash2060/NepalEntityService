@@ -687,3 +687,118 @@ class TestSearchFunctionality:
         # Should find Ram Chandra Poudel
         assert data["total"] >= 1
         # First result should be most relevant (exact match in name)
+
+
+# ============================================================================
+# Tag Filtering API Tests (Task 14.3)
+# ============================================================================
+
+
+class TestTagFilteringAPI:
+    """Tests for tag-based filtering via the /api/entities endpoint.
+
+    Requirements: 19.5
+    TDD Phase: RED - These tests define expected API behavior for tag filtering.
+    """
+
+    @pytest.mark.asyncio
+    async def test_filter_entities_by_single_tag(self, client):
+        """Test filtering entities by a single tag via query parameter."""
+        response = await client.get("/api/entities?tags=president")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # All returned entities should have the 'president' tag
+        for entity in data["entities"]:
+            assert "president" in entity.get("tags", [])
+
+    @pytest.mark.asyncio
+    async def test_filter_entities_by_multiple_tags(self, client):
+        """Test filtering entities by multiple comma-separated tags (AND logic)."""
+        response = await client.get("/api/entities?tags=politician,senior-leader")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # All returned entities should have both tags
+        for entity in data["entities"]:
+            entity_tags = entity.get("tags", [])
+            assert "politician" in entity_tags
+            assert "senior-leader" in entity_tags
+
+    @pytest.mark.asyncio
+    async def test_filter_entities_by_tags_combined_with_type(self, client):
+        """Test combining tag filter with entity_type filter."""
+        response = await client.get("/api/entities?entity_type=person&tags=politician")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # All returned entities should be persons with 'politician' tag
+        for entity in data["entities"]:
+            assert entity["type"] == "person"
+            assert "politician" in entity.get("tags", [])
+
+    @pytest.mark.asyncio
+    async def test_filter_entities_by_tags_combined_with_query(self, client):
+        """Test combining tag filter with text query."""
+        response = await client.get("/api/entities?query=poudel&tags=president")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # All returned entities should match query and have tag
+        for entity in data["entities"]:
+            assert "president" in entity.get("tags", [])
+
+    @pytest.mark.asyncio
+    async def test_filter_entities_empty_tags_returns_all(self, client):
+        """Test that empty tags parameter returns all entities."""
+        # Empty tags should not filter anything
+        response = await client.get("/api/entities?tags=")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should return entities (same as no tags filter)
+        assert "entities" in data
+
+    @pytest.mark.asyncio
+    async def test_filter_entities_nonexistent_tag_returns_empty(self, client):
+        """Test that filtering by non-existent tag returns empty results."""
+        response = await client.get("/api/entities?tags=nonexistent-tag-xyz")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["total"] == 0
+        assert data["entities"] == []
+
+    @pytest.mark.asyncio
+    async def test_tags_parameter_with_whitespace(self, client):
+        """Test that tags with whitespace are handled correctly."""
+        # Tags with spaces around commas should be trimmed
+        response = await client.get("/api/entities?tags=politician, senior-leader")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should work the same as without whitespace
+        for entity in data["entities"]:
+            entity_tags = entity.get("tags", [])
+            assert "politician" in entity_tags
+            assert "senior-leader" in entity_tags
+
+    @pytest.mark.asyncio
+    async def test_tags_cannot_combine_with_ids_parameter(self, client):
+        """Test that tags parameter cannot be combined with ids parameter."""
+        response = await client.get(
+            "/api/entities?ids=entity:person/ram-chandra-poudel&tags=president"
+        )
+
+        assert response.status_code == 400
+        data = response.json()
+
+        assert "detail" in data
+        assert "error" in data["detail"]

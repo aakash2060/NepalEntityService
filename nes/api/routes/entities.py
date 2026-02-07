@@ -9,7 +9,7 @@ This module provides endpoints for entity search, retrieval, and filtering:
 
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 
@@ -42,6 +42,10 @@ async def list_entities(
     attributes: Optional[str] = Query(
         None, description="Filter by attributes (JSON object)"
     ),
+    tags: Optional[str] = Query(
+        None,
+        description="Comma-separated tags to filter by (AND logic - entity must have ALL tags)",
+    ),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of results"),
     offset: int = Query(0, ge=0, description="Number of results to skip"),
     search_service: SearchService = Depends(get_search_service),
@@ -61,9 +65,10 @@ async def list_entities(
     - /api/entities?entity_type=person - List all persons
     - /api/entities?entity_type=organization&sub_type=political_party - List political parties
     - /api/entities?attributes={"party":"nepali-congress"} - Filter by attributes
+    - /api/entities?tags=politician,senior-leader - Filter by tags (AND logic)
     """
     # Validate mutually exclusive parameters
-    other_params = [query, entity_type, sub_type, attributes, limit != 100, offset != 0]
+    other_params = [query, entity_type, sub_type, attributes, tags, limit != 100, offset != 0]
 
     if ids is not None and any(other_params):
         raise HTTPException(
@@ -111,6 +116,15 @@ async def list_entities(
                 },
             )
 
+    # Parse tags parameter (comma-separated list)
+    tags_list: Optional[List[str]] = None
+    if tags:
+        # Split by comma and trim whitespace, filter out empty strings
+        tags_list = [tag.strip() for tag in tags.split(",") if tag.strip()]
+        # If all tags were empty/whitespace, treat as no filter
+        if not tags_list:
+            tags_list = None
+
     # Search entities
     try:
         entities = await search_service.search_entities(
@@ -118,6 +132,7 @@ async def list_entities(
             entity_type=entity_type,
             sub_type=sub_type,
             attributes=attr_filters,
+            tags=tags_list,
             limit=limit,
             offset=offset,
         )

@@ -263,3 +263,14 @@ The entity service hosts a public API that allows anyone to get the entity, rela
 4. THE Migration_System SHALL configure Git settings optimized for large repositories (core.preloadindex, core.fscache, gc.auto)
 5. THE Migration_System SHALL handle Git push operations for large commits with appropriate timeouts
 
+### Requirement 19
+
+**User Story:** As a researcher, I want to filter entities by tags, so that I can find entities belonging to specific categories or groups.
+
+#### Acceptance Criteria
+
+1. THE Search_Service SHALL support filtering entities by one or more tags
+2. WHEN multiple tags are provided, THE Search_Service SHALL apply AND logic (entity must have ALL specified tags)
+3. THE Search_Service SHALL allow combining tag filters with existing filters (type, subtype, attributes, text query)
+4. WHEN no tags filter is provided, THE Search_Service SHALL return entities regardless of their tags
+5. THE API SHALL expose tag filtering via the `/api/entities` endpoint with a `tags` query parameter

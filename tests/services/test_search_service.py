@@ -24,6 +24,10 @@ from nes.core.models.person import Person
 from nes.core.models.relationship import Relationship
 from nes.core.models.version import Author, Version, VersionSummary, VersionType
 from nes.database.file_database import FileDatabase
+from nes.services.publication import PublicationService
+from nes.services.search import SearchService
+from nes.database.in_memory_cached_read_database import InMemoryCachedReadDatabase
+
 
 
 class TestSearchServiceFoundation:
@@ -954,8 +958,6 @@ class TestSearchServiceTagFiltering:
 
         Requirement 19.1: THE Search_Service SHALL support filtering entities by one or more tags
         """
-        from nes.services.publication import PublicationService
-        from nes.services.search import SearchService
 
         db = FileDatabase(base_path=str(temp_db_path))
         pub_service = PublicationService(database=db)
@@ -997,9 +999,6 @@ class TestSearchServiceTagFiltering:
 
         Requirement 19.2: WHEN multiple tags are provided, THE Search_Service SHALL apply AND logic
         """
-        from nes.services.publication import PublicationService
-        from nes.services.search import SearchService
-
         db = FileDatabase(base_path=str(temp_db_path))
         pub_service = PublicationService(database=db)
         search_service = SearchService(database=db)
@@ -1051,8 +1050,6 @@ class TestSearchServiceTagFiltering:
 
         Requirement 19.3: THE Search_Service SHALL allow combining tag filters with existing filters
         """
-        from nes.services.publication import PublicationService
-        from nes.services.search import SearchService
 
         db = FileDatabase(base_path=str(temp_db_path))
         pub_service = PublicationService(database=db)
@@ -1099,8 +1096,6 @@ class TestSearchServiceTagFiltering:
 
         Requirement 19.3: THE Search_Service SHALL allow combining tag filters with existing filters
         """
-        from nes.services.publication import PublicationService
-        from nes.services.search import SearchService
 
         db = FileDatabase(base_path=str(temp_db_path))
         pub_service = PublicationService(database=db)
@@ -1145,8 +1140,6 @@ class TestSearchServiceTagFiltering:
 
         Requirement 19.4: WHEN no tags filter is provided, THE Search_Service SHALL return entities regardless of tags
         """
-        from nes.services.publication import PublicationService
-        from nes.services.search import SearchService
 
         db = FileDatabase(base_path=str(temp_db_path))
         pub_service = PublicationService(database=db)
@@ -1186,8 +1179,6 @@ class TestSearchServiceTagFiltering:
 
         Requirement 19.4: WHEN no tags filter is provided, THE Search_Service SHALL return entities regardless of tags
         """
-        from nes.services.publication import PublicationService
-        from nes.services.search import SearchService
 
         db = FileDatabase(base_path=str(temp_db_path))
         pub_service = PublicationService(database=db)
@@ -1213,12 +1204,307 @@ class TestSearchServiceTagFiltering:
     @pytest.mark.asyncio
     async def test_search_entities_tag_not_found_returns_empty(self, temp_db_path):
         """Test that searching for non-existent tag returns empty list."""
-        from nes.services.publication import PublicationService
-        from nes.services.search import SearchService
 
         db = FileDatabase(base_path=str(temp_db_path))
         pub_service = PublicationService(database=db)
         search_service = SearchService(database=db)
+
+        await pub_service.create_entity(
+            EntityType.PERSON,
+            {
+                "slug": "test-person",
+                "type": "person",
+                "names": [{"kind": "PRIMARY", "en": {"full": "Test Person"}}],
+                "tags": ["existing-tag"],
+            },
+            "author:test",
+            "Test",
+        )
+
+        # Search for non-existent tag
+        results = await search_service.search_entities(tags=["nonexistent-tag"])
+
+        assert len(results) == 0
+
+
+class TestSearchServiceTagFilteringWithInMemoryCachedDB:
+    """Test tag-based filtering with InMemoryCachedReadDatabase.
+
+    This test class verifies tag filtering works correctly with the production
+    database configuration used by nes.newnepal.org API, which uses
+    InMemoryCachedReadDatabase wrapper around FileDatabase.
+
+    These tests mirror TestSearchServiceTagFiltering but use the cached database
+    to ensure production parity and verify cache warming behavior.
+
+    Requirements: 19.1, 19.2, 19.3, 19.4
+    """
+
+    @pytest.mark.asyncio
+    async def test_search_entities_by_single_tag(self, temp_db_path):
+        """Test filtering entities by a single tag with cached database.
+
+        Requirement 19.1: THE Search_Service SHALL support filtering entities by one or more tags
+        """
+
+        file_db = FileDatabase(base_path=str(temp_db_path))
+        cached_db = InMemoryCachedReadDatabase(file_db)
+
+        pub_service = PublicationService(database=file_db)
+        search_service = SearchService(database=cached_db)
+
+        # Create entities with different tags
+        await pub_service.create_entity(
+            EntityType.PERSON,
+            {
+                "slug": "ram-chandra-poudel",
+                "type": "person",
+                "names": [{"kind": "PRIMARY", "en": {"full": "Ram Chandra Poudel"}}],
+                "tags": ["president", "senior-leader"],
+            },
+            "author:test",
+            "Test",
+        )
+        await pub_service.create_entity(
+            EntityType.PERSON,
+            {
+                "slug": "sher-bahadur-deuba",
+                "type": "person",
+                "names": [{"kind": "PRIMARY", "en": {"full": "Sher Bahadur Deuba"}}],
+                "tags": ["prime-minister", "senior-leader"],
+            },
+            "author:test",
+            "Test",
+        )
+
+        # Search by single tag - should find only the president
+        results = await search_service.search_entities(tags=["president"])
+
+        assert len(results) == 1
+        assert results[0].slug == "ram-chandra-poudel"
+
+    @pytest.mark.asyncio
+    async def test_search_entities_by_multiple_tags_and_logic(self, temp_db_path):
+        """Test filtering entities by multiple tags with AND logic using cached database.
+
+        Requirement 19.2: WHEN multiple tags are provided, THE Search_Service SHALL apply AND logic
+        """
+        file_db = FileDatabase(base_path=str(temp_db_path))
+        cached_db = InMemoryCachedReadDatabase(file_db)
+
+        pub_service = PublicationService(database=file_db)
+        search_service = SearchService(database=cached_db)
+
+        # Create entities with different tag combinations
+        await pub_service.create_entity(
+            EntityType.PERSON,
+            {
+                "slug": "person-a",
+                "type": "person",
+                "names": [{"kind": "PRIMARY", "en": {"full": "Person A"}}],
+                "tags": ["politician", "senior-leader", "congress"],
+            },
+            "author:test",
+            "Test",
+        )
+        await pub_service.create_entity(
+            EntityType.PERSON,
+            {
+                "slug": "person-b",
+                "type": "person",
+                "names": [{"kind": "PRIMARY", "en": {"full": "Person B"}}],
+                "tags": ["politician", "congress"],  # Missing "senior-leader"
+            },
+            "author:test",
+            "Test",
+        )
+        await pub_service.create_entity(
+            EntityType.PERSON,
+            {
+                "slug": "person-c",
+                "type": "person",
+                "names": [{"kind": "PRIMARY", "en": {"full": "Person C"}}],
+                "tags": ["politician", "senior-leader", "uml"],  # Has "uml" not "congress"
+            },
+            "author:test",
+            "Test",
+        )
+
+        # Search for entities with BOTH "senior-leader" AND "congress" tags
+        results = await search_service.search_entities(tags=["senior-leader", "congress"])
+
+        assert len(results) == 1
+        assert results[0].slug == "person-a"
+
+    @pytest.mark.asyncio
+    async def test_search_entities_by_tag_combined_with_type_filter(self, temp_db_path):
+        """Test combining tag filter with entity type filter using cached database.
+
+        Requirement 19.3: THE Search_Service SHALL allow combining tag filters with existing filters
+        """
+        file_db = FileDatabase(base_path=str(temp_db_path))
+        cached_db = InMemoryCachedReadDatabase(file_db)
+
+        pub_service = PublicationService(database=file_db)
+        search_service = SearchService(database=cached_db)
+
+        # Create person and organization with same tag
+        await pub_service.create_entity(
+            EntityType.PERSON,
+            {
+                "slug": "tagged-person",
+                "type": "person",
+                "names": [{"kind": "PRIMARY", "en": {"full": "Tagged Person"}}],
+                "tags": ["featured"],
+            },
+            "author:test",
+            "Test",
+        )
+        await pub_service.create_entity(
+            EntityType.ORGANIZATION,
+            {
+                "slug": "tagged-org",
+                "type": "organization",
+                "sub_type": "political_party",
+                "names": [{"kind": "PRIMARY", "en": {"full": "Tagged Organization"}}],
+                "tags": ["featured"],
+            },
+            "author:test",
+            "Test",
+            EntitySubType.POLITICAL_PARTY,
+        )
+
+        # Search with tag + type filter - should only return person
+        results = await search_service.search_entities(
+            tags=["featured"],
+            entity_type="person"
+        )
+
+        assert len(results) == 1
+        assert results[0].slug == "tagged-person"
+
+    @pytest.mark.asyncio
+    async def test_search_entities_by_tag_combined_with_text_query(self, temp_db_path):
+        """Test combining tag filter with text query using cached database.
+
+        Requirement 19.3: THE Search_Service SHALL allow combining tag filters with existing filters
+        """
+        file_db = FileDatabase(base_path=str(temp_db_path))
+        cached_db = InMemoryCachedReadDatabase(file_db)
+
+        pub_service = PublicationService(database=file_db)
+        search_service = SearchService(database=cached_db)
+
+        # Create entities
+        await pub_service.create_entity(
+            EntityType.PERSON,
+            {
+                "slug": "ram-sharma",
+                "type": "person",
+                "names": [{"kind": "PRIMARY", "en": {"full": "Ram Sharma"}}],
+                "tags": ["congress"],
+            },
+            "author:test",
+            "Test",
+        )
+        await pub_service.create_entity(
+            EntityType.PERSON,
+            {
+                "slug": "ram-thapa",
+                "type": "person",
+                "names": [{"kind": "PRIMARY", "en": {"full": "Ram Thapa"}}],
+                "tags": ["uml"],
+            },
+            "author:test",
+            "Test",
+        )
+
+        # Search with text query + tag filter
+        results = await search_service.search_entities(
+            query="Ram",
+            tags=["congress"]
+        )
+
+        assert len(results) == 1
+        assert results[0].slug == "ram-sharma"
+
+    @pytest.mark.asyncio
+    async def test_search_entities_no_tags_filter_returns_all(self, temp_db_path):
+        """Test that not specifying tags returns entities regardless of their tags with cached database.
+
+        Requirement 19.4: WHEN no tags filter is provided, THE Search_Service SHALL return entities regardless of tags
+        """
+        file_db = FileDatabase(base_path=str(temp_db_path))
+        cached_db = InMemoryCachedReadDatabase(file_db)
+
+        pub_service = PublicationService(database=file_db)
+        search_service = SearchService(database=cached_db)
+
+        # Create entities - one with tags, one without
+        await pub_service.create_entity(
+            EntityType.PERSON,
+            {
+                "slug": "with-tags",
+                "type": "person",
+                "names": [{"kind": "PRIMARY", "en": {"full": "Person With Tags"}}],
+                "tags": ["some-tag"],
+            },
+            "author:test",
+            "Test",
+        )
+        await pub_service.create_entity(
+            EntityType.PERSON,
+            {
+                "slug": "without-tags",
+                "type": "person",
+                "names": [{"kind": "PRIMARY", "en": {"full": "Person Without Tags"}}],
+            },
+            "author:test",
+            "Test",
+        )
+
+        # Search without tag filter - should return both
+        results = await search_service.search_entities(entity_type="person")
+
+        assert len(results) == 2
+
+    @pytest.mark.asyncio
+    async def test_search_entities_empty_tags_list_returns_all(self, temp_db_path):
+        """Test that empty tags list behaves same as no filter with cached database.
+
+        Requirement 19.4: WHEN no tags filter is provided, THE Search_Service SHALL return entities regardless of tags
+        """
+        file_db = FileDatabase(base_path=str(temp_db_path))
+        cached_db = InMemoryCachedReadDatabase(file_db)
+
+        pub_service = PublicationService(database=file_db)
+        search_service = SearchService(database=cached_db)
+
+        await pub_service.create_entity(
+            EntityType.PERSON,
+            {
+                "slug": "test-person",
+                "type": "person",
+                "names": [{"kind": "PRIMARY", "en": {"full": "Test Person"}}],
+                "tags": ["tag1"],
+            },
+            "author:test",
+            "Test",
+        )
+
+        # Search with empty tags list - should return all
+        results = await search_service.search_entities(tags=[])
+
+        assert len(results) == 1
+
+    @pytest.mark.asyncio
+    async def test_search_entities_tag_not_found_returns_empty(self, temp_db_path):
+        """Test that searching for non-existent tag returns empty list with cached database."""
+        file_db = FileDatabase(base_path=str(temp_db_path))
+        cached_db = InMemoryCachedReadDatabase(file_db)
+
+        pub_service = PublicationService(database=file_db)
+        search_service = SearchService(database=cached_db)
 
         await pub_service.create_entity(
             EntityType.PERSON,

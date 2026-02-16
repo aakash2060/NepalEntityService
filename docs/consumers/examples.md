@@ -89,6 +89,184 @@ for rel in data['relationships']:
 
 ## Advanced Examples
 
+### Filter by Tags - 2079 Federal Election Results
+
+Tags allow you to categorize entities into groups. Here's a complete example of analyzing the 2079 Federal election results:
+
+```python
+import requests
+from collections import Counter
+
+# Fetch all 2079 Federal election elected representatives
+response = requests.get(
+    "https://nes.newnepal.org/api/entities",
+    params={
+        "entity_type": "person",
+        "tags": "federal-election-2079-elected",
+        "limit": 500  # Adjust based on total elected representatives
+    }
+)
+
+data = response.json()
+print(f"Total 2079 Federal Election Elected Representatives: {data['total']}\n")
+
+# Display first 10 elected representatives with their details
+print("Sample Elected Representatives:")
+print("=" * 70)
+for entity in data['entities'][:10]:
+    name = entity['names'][0]['en']['full']
+    nepali_name = entity['names'][0].get('ne', {}).get('full', 'N/A')
+    party = entity['attributes'].get('party', 'Independent')
+    constituency = entity['attributes'].get('constituency', 'Unknown')
+
+    print(f"Name: {name}")
+    if nepali_name != 'N/A':
+        print(f"  Nepali: {nepali_name}")
+    print(f"  Party: {party}")
+    print(f"  Constituency: {constituency}")
+    print()
+
+# Analyze results by party
+print("\nElection Results by Party:")
+print("=" * 70)
+
+party_counts = Counter()
+for entity in data['entities']:
+    party = entity['attributes'].get('party', 'Independent')
+    party_counts[party] += 1
+
+for party, count in party_counts.most_common():
+    percentage = (count / data['total']) * 100
+    print(f"{party:35} {count:3} seats ({percentage:.1f}%)")
+
+print("=" * 70)
+print(f"Total Seats: {data['total']}")
+```
+
+**Filter candidates vs elected representatives:**
+
+```python
+import requests
+
+# Get all candidates (including those who didn't win)
+candidates_response = requests.get(
+    "https://nes.newnepal.org/api/entities",
+    params={
+        "entity_type": "person",
+        "tags": "federal-election-2079-candidate"
+    }
+)
+
+# Get only elected representatives
+elected_response = requests.get(
+    "https://nes.newnepal.org/api/entities",
+    params={
+        "entity_type": "person",
+        "tags": "federal-election-2079-elected"
+    }
+)
+
+candidates = candidates_response.json()
+elected = elected_response.json()
+
+print(f"Total Candidates: {candidates['total']}")
+print(f"Total Elected: {elected['total']}")
+print(f"Success Rate: {(elected['total'] / candidates['total'] * 100):.1f}%")
+```
+
+**Combine tags with text search:**
+
+```python
+import requests
+
+# Find all elected representatives with "poudel" in their name
+response = requests.get(
+    "https://nes.newnepal.org/api/entities",
+    params={
+        "query": "poudel",
+        "entity_type": "person",
+        "tags": "federal-election-2079-elected"
+    }
+)
+
+data = response.json()
+print(f"Found {data['total']} elected representatives named Poudel:\n")
+
+for entity in data['entities']:
+    name = entity['names'][0]['en']['full']
+    constituency = entity['attributes'].get('constituency', 'Unknown')
+    party = entity['attributes'].get('party', 'Independent')
+    print(f"- {name} ({constituency}, {party})")
+```
+
+**Compare federal and provincial elections:**
+
+```python
+import requests
+
+# Get federal election winners
+federal_response = requests.get(
+    "https://nes.newnepal.org/api/entities",
+    params={
+        "entity_type": "person",
+        "tags": "federal-election-2079-elected"
+    }
+)
+
+# Get provincial election winners
+provincial_response = requests.get(
+    "https://nes.newnepal.org/api/entities",
+    params={
+        "entity_type": "person",
+        "tags": "provincial-election-2079-elected"
+    }
+)
+
+federal = federal_response.json()
+provincial = provincial_response.json()
+
+print("2079 Election Results Summary:")
+print(f"  Federal Election: {federal['total']} seats")
+print(f"  Provincial Election: {provincial['total']} seats")
+print(f"  Total Elected: {federal['total'] + provincial['total']} representatives")
+```
+
+**Track candidates across elections (2079 to 2082):**
+
+```python
+import requests
+
+# Get 2082 Federal election candidates
+response_2082 = requests.get(
+    "https://nes.newnepal.org/api/entities",
+    params={
+        "entity_type": "person",
+        "tags": "federal-election-2082-candidate"
+    }
+)
+
+candidates_2082 = response_2082.json()['entities']
+
+print(f"Analyzing {len(candidates_2082)} candidates for 2082 election:\n")
+
+# For each 2082 candidate, check if they were in 2079 election
+for candidate in candidates_2082[:10]:  # Show first 10
+    name = candidate['names'][0]['en']['full']
+    tags = candidate.get('tags', [])
+
+    print(f"{name}:")
+
+    # Check if they were candidates or elected in 2079
+    if 'federal-election-2079-elected' in tags:
+        print("  ✓ Elected in 2079 Federal election (incumbent)")
+    elif 'federal-election-2079-candidate' in tags:
+        print("  • Candidate in 2079 Federal election (re-running)")
+    else:
+        print("  ⭐ First-time federal candidate")
+
+    print()
+```
+
 ### Search with Multiple Filters
 
 Combine multiple filters for precise results:

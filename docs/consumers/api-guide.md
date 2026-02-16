@@ -142,6 +142,85 @@ curl "https://nes.newnepal.org/api/entities?entity_type=person"
 curl "https://nes.newnepal.org/api/entities?entity_type=organization&sub_type=political_party"
 ```
 
+### Filter by Tags
+
+Tags allow you to categorize and filter entities by specific groups or categories:
+
+```bash
+# Get all 2079 Federal election elected representatives
+curl "https://nes.newnepal.org/api/entities?tags=federal-election-2079-elected"
+
+# Get all 2079 Federal election candidates (both elected and non-elected)
+curl "https://nes.newnepal.org/api/entities?tags=federal-election-2079-candidate"
+
+# Combine tags with entity type (get only person entities who were elected in 2079 Federal election)
+curl "https://nes.newnepal.org/api/entities?entity_type=person&tags=federal-election-2079-elected"
+```
+
+**Tag Filtering Rules:**
+- **Multiple tags use AND logic**: Entity must have ALL specified tags
+- **Tags can be combined with other filters**: type, subtype, query, etc.
+- **Comma-separated**: `tags=tag1,tag2,tag3`
+
+**Example: Find all candidates in both federal and provincial elections in 2079**
+
+```bash
+# Get entities with BOTH tags (candidates who ran for both federal and provincial seats)
+curl "https://nes.newnepal.org/api/entities?tags=federal-election-2079-candidate,provincial-election-2079-candidate"
+```
+
+**Python Example:**
+
+```python
+import requests
+
+# Get all 2079 Federal election elected representatives
+response = requests.get(
+    "https://nes.newnepal.org/api/entities",
+    params={
+        "entity_type": "person",
+        "tags": "federal-election-2079-elected"
+    }
+)
+
+elected = response.json()
+print(f"Found {elected['total']} elected representatives")
+
+for person in elected['entities']:
+    name = person['names'][0]['en']['full']
+    tags = ', '.join(person.get('tags', []))
+    constituency = person['attributes'].get('constituency', 'Unknown')
+    print(f"- {name} ({constituency})")
+    print(f"  Tags: {tags}")
+```
+
+**JavaScript Example:**
+
+```javascript
+// Fetch all 2082 Federal election candidates
+fetch('https://nes.newnepal.org/api/entities?tags=federal-election-2082-candidate')
+  .then(response => response.json())
+  .then(data => {
+    console.log(`Found ${data.total} candidates for 2082 Federal election`);
+    data.entities.forEach(entity => {
+      const name = entity.names[0].en.full;
+      const tags = entity.tags || [];
+      console.log(`- ${name}`);
+      console.log(`  Tags: ${tags.join(', ')}`);
+    });
+  });
+```
+
+**Available Tags in the System:**
+
+| Tag | Description |
+|-----|-------------|
+| `federal-election-2079-elected` | Elected in 2079 Federal election |
+| `provincial-election-2079-elected` | Elected in 2079 Provincial election |
+| `federal-election-2079-candidate` | Candidate in 2079 Federal election |
+| `provincial-election-2079-candidate` | Candidate in 2079 Provincial election |
+| `federal-election-2082-candidate` | Candidate in 2082 Federal election |
+
 ### Get a Specific Entity
 
 ```bash

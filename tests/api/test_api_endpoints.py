@@ -695,11 +695,6 @@ class TestSearchFunctionality:
 
 
 class TestTagFilteringAPI:
-    """Tests for tag-based filtering via the /api/entities endpoint.
-
-    Requirements: 19.5
-    TDD Phase: RED - These tests define expected API behavior for tag filtering.
-    """
 
     @pytest.mark.asyncio
     async def test_filter_entities_by_single_tag(self, client):
@@ -708,6 +703,11 @@ class TestTagFilteringAPI:
 
         assert response.status_code == 200
         data = response.json()
+        
+        # Ensure we get at least 1 result
+        assert data["total"] >= 1
+        assert len(data["entities"]) >= 1
+
 
         # All returned entities should have the 'president' tag
         for entity in data["entities"]:
@@ -720,6 +720,11 @@ class TestTagFilteringAPI:
 
         assert response.status_code == 200
         data = response.json()
+        
+        # Ensure we get at least 1 result
+        assert data["total"] >= 1
+        assert len(data["entities"]) >= 1
+
 
         # All returned entities should have both tags
         for entity in data["entities"]:
@@ -734,6 +739,11 @@ class TestTagFilteringAPI:
 
         assert response.status_code == 200
         data = response.json()
+        
+        # Ensure we get at least 1 result
+        assert data["total"] >= 1
+        assert len(data["entities"]) >= 1
+
 
         # All returned entities should be persons with 'politician' tag
         for entity in data["entities"]:
@@ -747,6 +757,11 @@ class TestTagFilteringAPI:
 
         assert response.status_code == 200
         data = response.json()
+        
+        # Ensure we get at least 1 result
+        assert data["total"] >= 1
+        assert len(data["entities"]) >= 1
+
 
         # All returned entities should match query and have tag
         for entity in data["entities"]:
@@ -783,6 +798,11 @@ class TestTagFilteringAPI:
 
         assert response.status_code == 200
         data = response.json()
+        
+        # Ensure we get at least 1 result
+        assert data["total"] >= 1
+        assert len(data["entities"]) >= 1
+
 
         # Should work the same as without whitespace
         for entity in data["entities"]:

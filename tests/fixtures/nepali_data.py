@@ -584,6 +584,23 @@ def get_politician_entity(slug: str) -> Dict[str, Any]:
     if not politician:
         raise ValueError(f"Politician with slug '{slug}' not found")
 
+    # Generate tags from positions
+    tags = ["politician"]  # All politicians get this tag
+    for position in politician.get("positions", []):
+        # Convert position to tag format (lowercase, hyphenated)
+        if "President" in position:
+            tags.append("president")
+        if "Prime Minister" in position:
+            tags.append("prime-minister")
+        if "Senior Leader" in position:
+            tags.append("senior-leader")
+        if "Minister" in position and "Prime" not in position:
+            tags.append("minister")
+        if "Speaker" in position:
+            tags.append("speaker")
+        if "Chairman" in position:
+            tags.append("party-leader")
+
     entity = {
         "slug": politician["slug"],
         "type": "person",
@@ -595,6 +612,7 @@ def get_politician_entity(slug: str) -> Dict[str, Any]:
                 "ne": politician["names"]["ne"],
             }
         ],
+        "tags": tags,
         "attributes": {
             "party": politician["party"],
             "constituency": politician.get("constituency"),

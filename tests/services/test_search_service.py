@@ -24,10 +24,9 @@ from nes.core.models.person import Person
 from nes.core.models.relationship import Relationship
 from nes.core.models.version import Author, Version, VersionSummary, VersionType
 from nes.database.file_database import FileDatabase
+from nes.database.in_memory_cached_read_database import InMemoryCachedReadDatabase
 from nes.services.publication import PublicationService
 from nes.services.search import SearchService
-from nes.database.in_memory_cached_read_database import InMemoryCachedReadDatabase
-
 
 
 class TestSearchServiceFoundation:
@@ -1032,14 +1031,20 @@ class TestSearchServiceTagFiltering:
                 "slug": "person-c",
                 "type": "person",
                 "names": [{"kind": "PRIMARY", "en": {"full": "Person C"}}],
-                "tags": ["politician", "senior-leader", "uml"],  # Has "uml" not "congress"
+                "tags": [
+                    "politician",
+                    "senior-leader",
+                    "uml",
+                ],  # Has "uml" not "congress"
             },
             "author:test",
             "Test",
         )
 
         # Search for entities with BOTH "senior-leader" AND "congress" tags
-        results = await search_service.search_entities(tags=["senior-leader", "congress"])
+        results = await search_service.search_entities(
+            tags=["senior-leader", "congress"]
+        )
 
         assert len(results) == 1
         assert results[0].slug == "person-a"
@@ -1083,8 +1088,7 @@ class TestSearchServiceTagFiltering:
 
         # Search with tag + type filter - should only return person
         results = await search_service.search_entities(
-            tags=["featured"],
-            entity_type="person"
+            tags=["featured"], entity_type="person"
         )
 
         assert len(results) == 1
@@ -1126,10 +1130,7 @@ class TestSearchServiceTagFiltering:
         )
 
         # Search with text query + tag filter
-        results = await search_service.search_entities(
-            query="Ram",
-            tags=["congress"]
-        )
+        results = await search_service.search_entities(query="Ram", tags=["congress"])
 
         assert len(results) == 1
         assert results[0].slug == "ram-sharma"
@@ -1324,14 +1325,20 @@ class TestSearchServiceTagFilteringWithInMemoryCachedDB:
                 "slug": "person-c",
                 "type": "person",
                 "names": [{"kind": "PRIMARY", "en": {"full": "Person C"}}],
-                "tags": ["politician", "senior-leader", "uml"],  # Has "uml" not "congress"
+                "tags": [
+                    "politician",
+                    "senior-leader",
+                    "uml",
+                ],  # Has "uml" not "congress"
             },
             "author:test",
             "Test",
         )
 
         # Search for entities with BOTH "senior-leader" AND "congress" tags
-        results = await search_service.search_entities(tags=["senior-leader", "congress"])
+        results = await search_service.search_entities(
+            tags=["senior-leader", "congress"]
+        )
 
         assert len(results) == 1
         assert results[0].slug == "person-a"
@@ -1376,8 +1383,7 @@ class TestSearchServiceTagFilteringWithInMemoryCachedDB:
 
         # Search with tag + type filter - should only return person
         results = await search_service.search_entities(
-            tags=["featured"],
-            entity_type="person"
+            tags=["featured"], entity_type="person"
         )
 
         assert len(results) == 1
@@ -1420,10 +1426,7 @@ class TestSearchServiceTagFilteringWithInMemoryCachedDB:
         )
 
         # Search with text query + tag filter
-        results = await search_service.search_entities(
-            query="Ram",
-            tags=["congress"]
-        )
+        results = await search_service.search_entities(query="Ram", tags=["congress"])
 
         assert len(results) == 1
         assert results[0].slug == "ram-sharma"

@@ -99,7 +99,9 @@ class TestTagFilteringIntegrationWithMemCached:
         assert "president" in results[0].tags
 
     @pytest.mark.asyncio
-    async def test_tag_filtering_via_config_multiple_tags_and_logic(self, file_db_for_writes):
+    async def test_tag_filtering_via_config_multiple_tags_and_logic(
+        self, file_db_for_writes
+    ):
         """Test tag filtering with multiple tags (AND logic) via Config system.
 
         Requirement 19.2: WHEN multiple tags are provided, THE Search_Service SHALL apply AND logic
@@ -135,7 +137,11 @@ class TestTagFilteringIntegrationWithMemCached:
                 "slug": "person-c",
                 "type": "person",
                 "names": [{"kind": "PRIMARY", "en": {"full": "Person C"}}],
-                "tags": ["politician", "senior-leader", "uml"],  # Has "uml" not "congress"
+                "tags": [
+                    "politician",
+                    "senior-leader",
+                    "uml",
+                ],  # Has "uml" not "congress"
             },
             "author:test",
             "Integration test",
@@ -143,14 +149,18 @@ class TestTagFilteringIntegrationWithMemCached:
 
         # Act: Search via Config system
         search_service = Config.get_search_service()
-        results = await search_service.search_entities(tags=["senior-leader", "congress"])
+        results = await search_service.search_entities(
+            tags=["senior-leader", "congress"]
+        )
 
         # Assert: Only person-a has BOTH tags
         assert len(results) == 1
         assert results[0].slug == "person-a"
 
     @pytest.mark.asyncio
-    async def test_tag_filtering_via_config_combined_with_filters(self, file_db_for_writes):
+    async def test_tag_filtering_via_config_combined_with_filters(
+        self, file_db_for_writes
+    ):
         """Test combining tag filter with other filters via Config system.
 
         Requirement 19.3: THE Search_Service SHALL allow combining tag filters with existing filters
@@ -187,8 +197,7 @@ class TestTagFilteringIntegrationWithMemCached:
         # Act: Search via Config system with tag + type filter
         search_service = Config.get_search_service()
         results = await search_service.search_entities(
-            tags=["featured"],
-            entity_type="person"
+            tags=["featured"], entity_type="person"
         )
 
         # Assert: Only person should be returned
@@ -229,10 +238,7 @@ class TestTagFilteringIntegrationWithMemCached:
 
         # Act: Search via Config system with text query + tag filter
         search_service = Config.get_search_service()
-        results = await search_service.search_entities(
-            query="Ram",
-            tags=["congress"]
-        )
+        results = await search_service.search_entities(query="Ram", tags=["congress"])
 
         # Assert
         assert len(results) == 1
@@ -276,7 +282,10 @@ class TestTagFilteringIntegrationWithMemCached:
         db = Config.get_database()
 
         # Verify it's the cached database
-        from nes.database.in_memory_cached_read_database import InMemoryCachedReadDatabase
+        from nes.database.in_memory_cached_read_database import (
+            InMemoryCachedReadDatabase,
+        )
+
         assert isinstance(db, InMemoryCachedReadDatabase)
 
         # Search via cached database
@@ -291,7 +300,9 @@ class TestTagFilteringIntegrationWithMemCached:
         assert results_c[0].slug == "person-2"
 
     @pytest.mark.asyncio
-    async def test_tag_filtering_via_config_verifies_production_setup(self, file_db_for_writes):
+    async def test_tag_filtering_via_config_verifies_production_setup(
+        self, file_db_for_writes
+    ):
         """Test that verifies the production setup with NES_DB_URL environment variable.
 
         This test confirms that:
@@ -320,7 +331,10 @@ class TestTagFilteringIntegrationWithMemCached:
 
         # Verify database is InMemoryCachedReadDatabase
         db = Config.get_database()
-        from nes.database.in_memory_cached_read_database import InMemoryCachedReadDatabase
+        from nes.database.in_memory_cached_read_database import (
+            InMemoryCachedReadDatabase,
+        )
+
         assert isinstance(db, InMemoryCachedReadDatabase)
 
         # Verify tag filtering works through Config

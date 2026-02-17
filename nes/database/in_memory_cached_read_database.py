@@ -262,9 +262,7 @@ class InMemoryCachedReadDatabase(EntityDatabase):
 
         # Apply tag filters (AND logic - entity must have ALL specified tags)
         if tags_tuple:
-            entities = [
-                e for e in entities if self._entity_matches_tags(e, tags_tuple)
-            ]
+            entities = [e for e in entities if self._entity_matches_tags(e, tags_tuple)]
 
         # Apply pagination and return as tuple
         return tuple(entities[offset : offset + limit])
@@ -298,7 +296,13 @@ class InMemoryCachedReadDatabase(EntityDatabase):
         # Try to get from cache
         def create_value():
             return self._search_entities_impl(
-                query, entity_type, sub_type, attr_filters_tuple, tags_tuple, limit, offset
+                query,
+                entity_type,
+                sub_type,
+                attr_filters_tuple,
+                tags_tuple,
+                limit,
+                offset,
             )
 
         result_tuple = self._query_cache.get(key=cache_key, createfunc=create_value)

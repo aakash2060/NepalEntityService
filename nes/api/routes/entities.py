@@ -68,7 +68,15 @@ async def list_entities(
     - /api/entities?tags=politician,senior-leader - Filter by tags (AND logic)
     """
     # Validate mutually exclusive parameters
-    other_params = [query, entity_type, sub_type, attributes, tags, limit != 100, offset != 0]
+    other_params = [
+        query,
+        entity_type,
+        sub_type,
+        attributes,
+        tags,
+        limit != 100,
+        offset != 0,
+    ]
 
     if ids is not None and any(other_params):
         raise HTTPException(
